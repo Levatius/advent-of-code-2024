@@ -16,8 +16,8 @@ def get_caller_path() -> Path:
 
 def get_aoc_imports():
     caller_path = get_caller_path()
-    day = int(re.search("\d+", caller_path.stem)[0])
-    year = int(re.search("\d+", caller_path.parent.parent.stem)[0])
+    day = int(re.search(r"\d+", caller_path.stem)[0])
+    year = int(re.search(r"\d+", caller_path.parent.parent.stem)[0])
     day_filename = f"day_{day:02}"
     module = importlib.import_module(f"src.{day_filename}", str(Path.cwd() / "src" / f"{day_filename}.py"))
     try:
