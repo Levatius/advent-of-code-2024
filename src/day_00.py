@@ -1,5 +1,5 @@
-def parse(raw):
-    return raw.splitlines()
+def parse(lines):
+    pass
 
 
 def part_1(lines):
