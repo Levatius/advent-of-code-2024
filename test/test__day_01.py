@@ -1,6 +1,6 @@
 import pytest
 
-from utils import get_aoc_imports
+from test.utils import get_aoc_imports
 
 parse, part_1, part_2, puzzle_input_lines = get_aoc_imports()
 
