@@ -13,7 +13,7 @@ def is_safe(report, dampener=False):
     if safety_level == safety_max:
         return True
     elif dampener and safety_level >= safety_max - 2:
-        # Apply the Problem Dampener across the elements of each report
+        # Apply the Problem Dampener across elements of the report
         for i in range(len(report)):
             dampened_report = report[:i] + report[i + 1:]
             if is_safe(dampened_report):
