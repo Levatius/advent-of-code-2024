@@ -1,8 +1,14 @@
-from numpy import array
+# Rotates the given direction by 90 degrees clockwise
+NEXT_DIRECTION = {
+    (-1, 0): (0, 1),
+    (0, 1): (1, 0),
+    (1, 0): (0, -1),
+    (0, -1): (-1, 0),
+}
 
 
 def parse(lines):
-    start_pos = None
+    position = None
     obstructions = set()
     for j, line in enumerate(lines):
         for i, item in enumerate(line):
@@ -10,60 +16,79 @@ def parse(lines):
                 case "#":
                     obstructions.add((j, i))
                 case "^":
-                    start_pos = (j, i)
+                    position = (j, i)
     bounds = (len(lines), len(lines[0]))
-    return start_pos, obstructions, bounds
+    return position, obstructions, bounds
 
 
-def is_in_bounds(pos, bounds):
-    return (0 <= pos).all() and (pos < bounds).all()
+# PART 1
 
 
-def rotate(guard_dir):
-    match tuple(guard_dir):
-        case (-1, 0):
-            return array((0, 1))
-        case (0, 1):
-            return array((1, 0))
-        case (1, 0):
-            return array((0, -1))
-        case (0, -1):
-            return array((-1, 0))
+def is_in_bounds(position, bounds):
+    return (0 <= position[0] < bounds[0]) and (0 <= position[1] < bounds[1])
 
 
-def get_guard_logs(start_pos, obstructions, bounds, start_dir=(-1, 0)):
-    guard_pos = array(start_pos)
-    guard_dir = array(start_dir)
-    guard_logs = {(start_pos, start_dir)}
-    while is_in_bounds(guard_next := guard_pos + guard_dir, bounds):
-        if tuple(guard_next) in obstructions:
-            guard_dir = rotate(guard_dir)
+def move(position, direction, steps=1):
+    return position[0] + steps * direction[0], position[1] + steps * direction[1]
+
+
+def get_path(position, obstructions, bounds, direction=(-1, 0)):
+    path = [(position, direction)]
+    while is_in_bounds(next_position := move(position, direction), bounds):
+        if next_position in obstructions:
+            direction = NEXT_DIRECTION[direction]
         else:
-            guard_pos = guard_next
-        if (guard_log := (tuple(guard_pos), tuple(guard_dir))) not in guard_logs:
-            guard_logs.add(guard_log)
+            position = next_position
+        path.append((position, direction))
+    return path
+
+
+def part_1(position, obstructions, bounds):
+    path = get_path(position, obstructions, bounds)
+    return len({position for position, _ in path})
+
+
+# PART 2
+
+
+def find_temporal_obstructions(path):
+    # Temporal obstructions are found along the path
+    obstructions = {}
+    for position, direction in path:
+        # Only consider the first approach to a temporal obstruction
+        if position in obstructions:
             continue
-        return None
-    return guard_logs
-
-def is_loop(start_pos, obstructions, bounds, start_dir):
-    pass
-
-
-def part_1(start_pos, obstructions, bounds):
-    guard_logs = get_guard_logs(start_pos, obstructions, bounds)
-    return len({guard_pos for guard_pos, _ in guard_logs})
+        # Rewrite history, we will check for a loop from here
+        start_position = move(position, direction, steps=-1)
+        start_direction = NEXT_DIRECTION[direction]
+        obstructions[position] = (start_position, start_direction)
+    return obstructions
 
 
-def part_2(start_pos, obstructions, bounds):
+def is_loop(position, obstructions, bounds, direction):
+    # Starts at the temporal obstruction, seeks loop or out of bounds
+    corners = set()
+    while is_in_bounds(next_position := move(position, direction), bounds):
+        if next_position in obstructions:
+            if (corner := (position, direction)) not in corners:
+                corners.add(corner)
+            else:
+                # We have seen this corner before => Looping
+                return True
+            direction = NEXT_DIRECTION[direction]
+        else:
+            position = next_position
+    return False
+
+
+def part_2(position, obstructions, bounds):
     total = 0
-    guard_logs = get_guard_logs(start_pos, obstructions, bounds)
-    possible_obstructions = {tuple(array(guard_pos) + array(guard_dir)) for guard_pos, guard_dir in guard_logs}
-    for i, possible_obstruction in enumerate(possible_obstructions):
-        if (possible_obstruction == start_pos) or (possible_obstruction in obstructions) or (not is_in_bounds(array(possible_obstruction), bounds)):
-            continue
-        new_obstructions = set(obstructions)
-        new_obstructions.add(possible_obstruction)
-        if get_guard_logs(start_pos, new_obstructions, bounds) is None:
-            total += 1
+    path = get_path(position, obstructions, bounds)
+    temporal_obstructions = find_temporal_obstructions(path)
+    # Start is not allowed
+    temporal_obstructions.pop(position)
+
+    for temporal_obstruction, (position, direction) in temporal_obstructions.items():
+        all_obstructions = obstructions.union({temporal_obstruction})
+        total += is_loop(position, all_obstructions, bounds, direction)
     return total
