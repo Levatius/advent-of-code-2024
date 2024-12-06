@@ -1,23 +1,14 @@
-# Rotates the given direction by 90 degrees clockwise
-NEXT_DIRECTION = {
-    (-1, 0): (0, 1),
-    (0, 1): (1, 0),
-    (1, 0): (0, -1),
-    (0, -1): (-1, 0),
-}
-
-
 def parse(lines):
     position = None
     obstructions = set()
-    for j, line in enumerate(lines):
-        for i, item in enumerate(line):
+    for a, line in enumerate(lines):
+        for b, item in enumerate(line):
             match item:
                 case "#":
-                    obstructions.add((j, i))
+                    obstructions.add(complex(a, b))
                 case "^":
-                    position = (j, i)
-    bounds = (len(lines), len(lines[0]))
+                    position = complex(a, b)
+    bounds = complex(len(lines), len(lines[0]))
     return position, obstructions, bounds
 
 
@@ -25,18 +16,14 @@ def parse(lines):
 
 
 def is_in_bounds(position, bounds):
-    return (0 <= position[0] < bounds[0]) and (0 <= position[1] < bounds[1])
+    return (0 <= position.real < bounds.real) and (0 <= position.imag < bounds.imag)
 
 
-def move(position, direction, steps=1):
-    return position[0] + steps * direction[0], position[1] + steps * direction[1]
-
-
-def get_path(position, obstructions, bounds, direction=(-1, 0)):
+def get_path(position, obstructions, bounds, direction=-1 + 0j):
     path = [(position, direction)]
-    while is_in_bounds(next_position := move(position, direction), bounds):
+    while is_in_bounds(next_position := position + direction, bounds):
         if next_position in obstructions:
-            direction = NEXT_DIRECTION[direction]
+            direction = direction * -1j
         else:
             position = next_position
         path.append((position, direction))
@@ -59,8 +46,8 @@ def find_temporal_obstructions(path):
         if position in obstructions:
             continue
         # Rewrite history, we will check for a loop from here
-        start_position = move(position, direction, steps=-1)
-        start_direction = NEXT_DIRECTION[direction]
+        start_position = position - direction
+        start_direction = direction * -1j
         obstructions[position] = (start_position, start_direction)
     return obstructions
 
@@ -68,14 +55,14 @@ def find_temporal_obstructions(path):
 def is_loop(position, obstructions, bounds, direction):
     # Starts at the temporal obstruction, seeks loop or out of bounds
     corners = set()
-    while is_in_bounds(next_position := move(position, direction), bounds):
+    while is_in_bounds(next_position := position + direction, bounds):
         if next_position in obstructions:
             if (corner := (position, direction)) not in corners:
                 corners.add(corner)
             else:
                 # We have seen this corner before => Looping
                 return True
-            direction = NEXT_DIRECTION[direction]
+            direction = direction * -1j
         else:
             position = next_position
     return False
