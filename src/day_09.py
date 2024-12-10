@@ -11,12 +11,14 @@ class File:
 class Block:
     id: int
     size: int
+    available: int = field(init=False)
     files: list[File] = field(default_factory=list)
-    modified: bool = False
 
-    @property
-    def available(self):
-        return self.size - sum(file.size for file in self.files)
+    def __post_init__(self):
+        self.recalc_available()
+
+    def recalc_available(self):
+        self.available = self.size - sum(file.size for file in self.files)
 
     @property
     def checksum(self):
@@ -38,6 +40,7 @@ def parse(line):
         block = Block(block_id, size)
         if i % 2 == 0:
             block.files.append(File(id=i // 2, size=size))
+            block.recalc_available()
         blocks.append(block)
         block_id += size
     return blocks
@@ -46,40 +49,39 @@ def parse(line):
 def part_1(blocks):
     search_start = 0
     for j, file_block in enumerate(reversed(blocks)):
-        search_end = len(blocks) - j
-        if search_start >= search_end:
+        if search_start >= (search_end := len(blocks) - j):
             break
-        while file_block.files:
-            if file_block.modified:
+        if not file_block.files:
+            continue
+        file = file_block.files.pop()
+        file_block.recalc_available()
+
+        for i, free_block in enumerate(blocks[search_start:search_end]):
+            if free_block.available == 0:
+                search_start += 1
+                continue
+            size_to_move = min(file.size, free_block.available)
+            free_block.files.append(File(file.id, size_to_move))
+            free_block.recalc_available()
+
+            file.size -= size_to_move
+            if file.size == 0:
                 break
-            file = file_block.files.pop()
-            for i, free_block in enumerate(blocks[search_start:search_end]):
-                if free_block.available == 0:
-                    search_start += 1
-                    continue
-                size_to_move = min(file.size, free_block.available)
-                free_block.files.append(File(file.id, size_to_move))
-                free_block.modified = True
-                file.size -= size_to_move
-                if file.size == 0:
-                    break
     return sum(block.checksum for block in blocks)
 
 
 def part_2(blocks):
-    search_start = 0
     for j, file_block in enumerate(reversed(blocks)):
         search_end = len(blocks) - j
-        if search_start >= search_end:
+        if not file_block.files:
+            continue
+        file = file_block.files.pop()
+        file_block.recalc_available()
+
+        for free_block in blocks[:search_end]:
+            if free_block.available < file.size:
+                continue
+            free_block.files.append(file)
+            free_block.recalc_available()
             break
-        while file_block.files:
-            if file_block.modified:
-                break
-            file = file_block.files.pop()
-            for i, free_block in enumerate(blocks[search_start:search_end]):
-                if free_block.available < file.size:
-                    continue
-                free_block.files.append(file)
-                free_block.modified = True
-                break
     return sum(block.checksum for block in blocks)
