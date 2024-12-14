@@ -40,14 +40,17 @@ def calc_minimum_tokens(machines: list[Machine], limit=None, boost=0):
         coefficient_matrix = [[machine.button_a.x, machine.button_b.x], [machine.button_a.y, machine.button_b.y]]
         ordinate = [machine.prize.x + boost, machine.prize.y + boost]
         solutions = np.linalg.solve(coefficient_matrix, ordinate)
-        if np.allclose((int_solutions := np.round(solutions)), solutions):
-            if limit is not None and (int_solutions[0] > limit or int_solutions[1] > limit):
+        if np.allclose((int_solutions := np.round(solutions)), solutions, rtol=0, atol=1.e-3):
+            x, y = int_solutions
+            if limit is not None and (x > limit or y > limit):
                 continue
-            tokens += 3 * int_solutions[0] + 1 * int_solutions[1]
+            tokens += 3 * x + 1 * y
     return tokens
+
 
 def part_1(machines):
     return calc_minimum_tokens(machines, limit=100)
+
 
 def part_2(machines):
     return calc_minimum_tokens(machines, boost=10_000_000_000_000)
