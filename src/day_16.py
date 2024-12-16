@@ -33,8 +33,8 @@ def parse(lines):
     return maze
 
 
-def get_node(maze, value):
-    return next(node for node, attr in maze.nodes.items() if attr["value"] == value and node.level == "H")
+def get_node(maze, value, level="H"):
+    return next(node for node, attr in maze.nodes.items() if attr["value"] == value and node.level == level)
 
 
 def part_1(maze):
