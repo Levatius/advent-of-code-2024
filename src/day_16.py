@@ -33,17 +33,15 @@ def parse(lines):
     return maze
 
 
-def get_start_and_end(maze):
-    start = next(node for node, attr in maze.nodes.items() if attr["value"] == "S" and node.level == "H")
-    end = next(node for node, attr in maze.nodes.items() if attr["value"] == "E" and node.level == "H")
-    return start, end
+def get_node(maze, value):
+    return next(node for node, attr in maze.nodes.items() if attr["value"] == value and node.level == "H")
 
 
 def part_1(maze):
-    start, end = get_start_and_end(maze)
+    start, end = get_node(maze, "S"), get_node(maze, "E")
     return nx.shortest_path_length(maze, start, end, weight="cost")
 
 
 def part_2(maze):
-    start, end = get_start_and_end(maze)
+    start, end = get_node(maze, "S"), get_node(maze, "E")
     return len({node.position for path in nx.all_shortest_paths(maze, start, end, weight="cost") for node in path})
