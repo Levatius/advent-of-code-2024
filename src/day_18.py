@@ -14,6 +14,7 @@ def parse(lines, size, initial_fallen):
                 graph.add_edge(node, adjacent_node)
     return graph, size, falling_bytes[initial_fallen:]
 
+
 def part_1(graph, size, _):
     return nx.shortest_path_length(graph, 0 + 0j, complex(size, size))
 
