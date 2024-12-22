@@ -42,5 +42,6 @@ def test__part_2__example_2(example_2):
     assert part_2(example_2) == 23
 
 
+@pytest.mark.skip(reason="Slow Test")
 def test__part_2__puzzle_input(puzzle_input):
     print(part_2(puzzle_input))
